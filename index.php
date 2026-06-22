@@ -241,7 +241,7 @@ function dashboardStatus(string $statusId): string
 {
   return match ($statusId) {
     '1', '2', '3' => 'Em execucao',
-    '4' => 'Em espera',
+    '4' => 'Pendente',
     '5', '6' => 'Concluido',
     default => 'Pendente',
   };

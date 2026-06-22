@@ -13,7 +13,7 @@ if ($projectsJson === false) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GLPI- Dashboard Projetos</title>
+  <title>GLPI - Dashboard Projetos</title>
   <link rel="icon" type="image/png" href="/dashboard/public/assets/bm3group.png">
   <link rel="apple-touch-icon" href="/dashboard/public/assets/bm3group.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,6 +50,12 @@ if ($projectsJson === false) {
       --status-atraso-bg: #FDEAEA;
       --status-atraso-fg: #B23030;
       --status-atraso-dot: #D64545;
+      --priority-one: #00EF4B;
+      --priority-other: #E4F83B;
+      --priority-other-fg: #4D5A00;
+      --priority-none: #A8B2B5;
+      --priority-none-bg: #ECEEEE;
+      --priority-none-fg: #5C6566;
     }
 
     * {
@@ -153,7 +159,7 @@ if ($projectsJson === false) {
     main {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 28px clamp(16px, 4vw, 48px) 64px
+      padding: 28px 0;
     }
 
     .alert {
@@ -313,6 +319,21 @@ if ($projectsJson === false) {
       gap: 14px
     }
 
+    .project-card.priority-1 {
+      border-color: var(--priority-one);
+      box-shadow: inset 0 0 0 1px var(--priority-one), var(--shadow-sm)
+    }
+
+    .project-card.priority-other {
+      border-color: var(--priority-other);
+      box-shadow: inset 0 0 0 1px var(--priority-other), var(--shadow-sm)
+    }
+
+    .project-card.priority-none {
+      border-color: var(--priority-none);
+      box-shadow: inset 0 0 0 1px var(--priority-none), var(--shadow-sm)
+    }
+
     .dept {
       font-size: 11px;
       text-transform: uppercase;
@@ -423,6 +444,50 @@ if ($projectsJson === false) {
       background: #F8FAFA;
       border-radius: var(--radius-sm);
       padding: 10px 12px
+    }
+
+    .priority-chip {
+      align-self: flex-start;
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 800
+    }
+
+    .priority-chip.priority-1 {
+      background: var(--priority-one);
+      color: var(--petrol-900)
+    }
+
+    .priority-chip.priority-other {
+      background: var(--priority-other);
+      color: var(--priority-other-fg)
+    }
+
+    .priority-chip.priority-none {
+      background: var(--priority-none-bg);
+      color: var(--priority-none-fg)
+    }
+
+    .priority-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle
+    }
+
+    .priority-dot.priority-1 {
+      background: var(--priority-one)
+    }
+
+    .priority-dot.priority-other {
+      background: var(--priority-other)
+    }
+
+    .priority-dot.priority-none {
+      background: var(--priority-none)
     }
 
     .empty-state {
@@ -547,6 +612,7 @@ if ($projectsJson === false) {
       <div class="filter-field"><label for="filtroDepartamento">Departamento</label><select id="filtroDepartamento"></select></div>
       <div class="filter-field"><label for="filtroStatus">Status</label><select id="filtroStatus"></select></div>
       <div class="filter-field"><label for="filtroResponsavel">Responsável</label><select id="filtroResponsavel"></select></div>
+      <div class="filter-field"><label for="filtroPrioridade">Prioridade</label><select id="filtroPrioridade"></select></div>
       <div class="filter-field search"><label for="filtroBusca">Buscar por projeto ou responsável</label><input id="filtroBusca" type="text" placeholder="Ex.: WMS, BI, nome do tecnico..."></div>
       <button class="filter-reset" id="resetFiltros">Limpar filtros</button>
     </section>
@@ -565,7 +631,7 @@ if ($projectsJson === false) {
               <th>Responsável</th>
               <th>Status</th>
               <th>Progresso</th>
-              <th>Ultima atualizacao</th>
+              <th>Abertura / solucao</th>
               <th>Chamado</th>
             </tr>
           </thead>
@@ -609,6 +675,7 @@ if ($projectsJson === false) {
     const filtroDepto = document.getElementById('filtroDepartamento');
     const filtroStatus = document.getElementById('filtroStatus');
     const filtroResponsavel = document.getElementById('filtroResponsavel');
+    const filtroPrioridade = document.getElementById('filtroPrioridade');
     const filtroBusca = document.getElementById('filtroBusca');
     const resetFiltros = document.getElementById('resetFiltros');
     const resultsCount = document.getElementById('resultsCount');
@@ -616,6 +683,7 @@ if ($projectsJson === false) {
       departamento: 'todos',
       status: 'Em execucao',
       responsavel: 'todos',
+      prioridade: 'todos',
       busca: ''
     };
     const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, c => ({
@@ -627,6 +695,11 @@ if ($projectsJson === false) {
     } [c]));
     const badgeClass = status => (STATUS_CONFIG[status] && STATUS_CONFIG[status].badge) || "espera";
     const barColor = status => (STATUS_CONFIG[status] && STATUS_CONFIG[status].bar) || "var(--status-espera-dot)";
+    const progressLabel = project => project.progressoLabel || `${Number(project.progresso) || 0}%`;
+    const progressWidth = project => {
+      const value = Number(project.progresso) || 0;
+      return value > 0 && value < 1 ? 1 : value;
+    };
 
     function responsibleNames(project) {
       return Array.isArray(project.responsaveis) ? project.responsaveis : [project.responsavel];
@@ -654,6 +727,7 @@ if ($projectsJson === false) {
         return (active.departamento === 'todos' || project.departamento === active.departamento) &&
           (active.status === 'todos' || project.status === active.status) &&
           (active.responsavel === 'todos' || nomes.includes(active.responsavel)) &&
+          (active.prioridade === 'todos' || project.prioridadeFiltro === active.prioridade) &&
           okBusca;
       });
     }
@@ -701,14 +775,19 @@ if ($projectsJson === false) {
       const responsaveis = [...new Set(filteredProjects({
         responsavel: 'todos'
       }).flatMap(responsibleNames).filter(Boolean))].sort();
+      const prioridades = [...new Set(filteredProjects({
+        prioridade: 'todos'
+      }).map(p => p.prioridadeFiltro).filter(Boolean))].sort();
 
       if (filtros.departamento !== 'todos' && !departamentos.includes(filtros.departamento)) filtros.departamento = 'todos';
       if (filtros.status !== 'todos' && !statusList.includes(filtros.status)) filtros.status = 'todos';
       if (filtros.responsavel !== 'todos' && !responsaveis.includes(filtros.responsavel)) filtros.responsavel = 'todos';
+      if (filtros.prioridade !== 'todos' && !prioridades.includes(filtros.prioridade)) filtros.prioridade = 'todos';
 
       renderSelect(filtroDepto, departamentos, filtros.departamento, 'Todos os departamentos');
       renderSelect(filtroStatus, statusList, filtros.status, 'Todos os status');
       renderSelect(filtroResponsavel, responsaveis, filtros.responsavel, 'Todos os responsaveis');
+      renderSelect(filtroPrioridade, prioridades, filtros.prioridade, 'Todas as prioridades');
     }
 
     function renderCards(lista) {
@@ -716,7 +795,7 @@ if ($projectsJson === false) {
         cardsGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">Nenhum chamado com tag de projeto encontrado.</div>';
         return;
       }
-      cardsGrid.innerHTML = lista.map(p => `<div class="project-card"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}Atualizado: ${escapeHtml(p.prazo)}</div><div><div class="progress-label"><span>Progresso</span><span>${Number(p.progresso)||0}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${Number(p.progresso)||0}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div></div>`).join('');
+      cardsGrid.innerHTML = lista.map(p => `<div class="project-card ${escapeHtml(p.prioridadeClasse)}"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}${escapeHtml(p.periodo_sla)}</div><div><div class="progress-label"><span>Progresso</span><span>${escapeHtml(progressLabel(p))}</span></div><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div><span class="priority-chip ${escapeHtml(p.prioridadeClasse)}">${escapeHtml(p.prioridade)}</span></div>`).join('');
     }
 
     function renderTable(lista) {
@@ -724,7 +803,7 @@ if ($projectsJson === false) {
         tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:30px;">Nenhum chamado encontrado.</td></tr>';
         return;
       }
-      tableBody.innerHTML = lista.map(p => `<tr><td>${escapeHtml(p.departamento)}</td><td><strong>${escapeHtml(p.projeto)}</strong></td><td>${escapeHtml(p.responsavel)}</td><td><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></td><td><div class="table-progress"><div class="progress-track"><div class="progress-fill" style="width:${Number(p.progresso)||0}%;background:${barColor(p.status)}"></div></div><span>${Number(p.progresso)||0}%</span></div></td><td>${escapeHtml(p.prazo)}</td><td>${escapeHtml(p.observacao)}</td></tr>`).join('');
+      tableBody.innerHTML = lista.map(p => `<tr><td><span class="priority-dot ${escapeHtml(p.prioridadeClasse)}"></span>${escapeHtml(p.departamento)}</td><td><strong>${escapeHtml(p.projeto)}</strong></td><td>${escapeHtml(p.responsavel)}</td><td><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></td><td><div class="table-progress"><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div><span>${escapeHtml(progressLabel(p))}</span></div></td><td>${escapeHtml(p.periodo_sla)}</td><td>${escapeHtml(p.observacao)}</td></tr>`).join('');
     }
 
     function aplicarFiltros() {
@@ -750,6 +829,10 @@ if ($projectsJson === false) {
       filtros.responsavel = filtroResponsavel.value;
       aplicarFiltros();
     });
+    filtroPrioridade.addEventListener('change', () => {
+      filtros.prioridade = filtroPrioridade.value;
+      aplicarFiltros();
+    });
     filtroBusca.addEventListener('input', () => {
       filtros.busca = filtroBusca.value.trim().toLowerCase();
       aplicarFiltros();
@@ -764,6 +847,7 @@ if ($projectsJson === false) {
       filtros.departamento = 'todos';
       filtros.status = 'todos';
       filtros.responsavel = 'todos';
+      filtros.prioridade = 'todos';
       filtros.busca = '';
       filtroBusca.value = '';
       aplicarFiltros();

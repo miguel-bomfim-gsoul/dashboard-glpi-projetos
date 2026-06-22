@@ -17,6 +17,7 @@ function load_config(string $envFile): array
             'project_field' => env_value('GLPI_PROJECT_FIELD', '10500'),
             'project_tag' => env_value('GLPI_PROJECT_TAG', '3'),
             'project_tag_label' => env_value('GLPI_PROJECT_TAG_LABEL', 'PROJETOS'),
+            'category_field' => env_value('GLPI_CATEGORY_FIELD', '7'),
             'open_date_field' => env_value('GLPI_OPEN_DATE_FIELD', '15'),
             'solution_time_field' => env_value('GLPI_SOLUTION_TIME_FIELD', '18'),
         ],

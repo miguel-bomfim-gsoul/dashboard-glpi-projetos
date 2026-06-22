@@ -30,7 +30,57 @@ function fetch_project_ticket_rows(array $config, string $sessionToken): array
         $start += $pageSize;
     } while ($start < $totalCount && count($rows) > 0);
 
+    return enrich_ticket_categories($tickets, $config, $sessionToken);
+}
+
+function enrich_ticket_categories(array $tickets, array $config, string $sessionToken): array
+{
+    $categoryField = $config['glpi']['category_field'];
+    $categoryIds = [];
+
+    foreach ($tickets as $ticket) {
+        $rawCategory = value_to_string($ticket[$categoryField] ?? '');
+        if (ctype_digit($rawCategory)) {
+            $categoryIds[$rawCategory] = true;
+        }
+    }
+
+    if ($categoryIds === []) {
+        return $tickets;
+    }
+
+    $categoryNames = [];
+    foreach (array_keys($categoryIds) as $categoryId) {
+        try {
+            $category = glpi_request($config, 'GET', '/ITILCategory/' . $categoryId, null, $sessionToken);
+            $categoryNames[$categoryId] = itil_category_name($category);
+        } catch (Throwable $error) {
+            $categoryNames[$categoryId] = '';
+        }
+    }
+
+    foreach ($tickets as $index => $ticket) {
+        $rawCategory = value_to_string($ticket[$categoryField] ?? '');
+        if (isset($categoryNames[$rawCategory]) && $categoryNames[$rawCategory] !== '') {
+            $tickets[$index]['_category_name'] = $categoryNames[$rawCategory];
+        } else {
+            $tickets[$index]['_category_name'] = $rawCategory;
+        }
+    }
+
     return $tickets;
+}
+
+function itil_category_name(array $category): string
+{
+    foreach (['name', 'completename'] as $field) {
+        $value = value_to_string($category[$field] ?? '');
+        if ($value !== '') {
+            return $value;
+        }
+    }
+
+    return '';
 }
 
 function build_project_ticket_query(array $config, int $start, int $pageSize): array
@@ -64,6 +114,7 @@ function build_project_ticket_query(array $config, int $start, int $pageSize): a
         3,
         4,
         5,
+        $config['glpi']['category_field'],
         12,
         $config['glpi']['open_date_field'],
         $config['glpi']['solution_time_field'],

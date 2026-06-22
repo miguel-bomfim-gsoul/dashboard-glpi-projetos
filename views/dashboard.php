@@ -98,13 +98,16 @@ if ($projectsJson === false) {
 
     .brand-mark {
       height: 64px;
-      width: 64px;
-      border: 1px solid rgba(255, 255, 255, .32);
-      display: grid;
-      place-items: center;
-      font-family: Sora;
-      font-weight: 800;
-      background: rgba(255, 255, 255, .08)
+      width: 86px;
+      display: flex;
+      align-items: center
+    }
+
+    .brand-mark img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain
     }
 
     .brand-divider {
@@ -519,7 +522,7 @@ if ($projectsJson === false) {
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand-block">
-        <div class="brand-mark">BM3</div>
+        <div class="brand-mark"><img src="/dashboard/public/assets/bm3group.png" alt="BM3 Group Logo"></div>
         <div class="brand-divider"></div>
         <div class="brand-text">
           <h1>Dashboard de Projetos em Execucao</h1>

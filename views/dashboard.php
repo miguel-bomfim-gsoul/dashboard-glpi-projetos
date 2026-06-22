@@ -13,7 +13,7 @@ if ($projectsJson === false) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Projetos em Execucao - BM3 Group</title>
+  <title>GLPI- Dashboard Projetos</title>
   <link rel="icon" type="image/png" href="/dashboard/public/assets/bm3group.png">
   <link rel="apple-touch-icon" href="/dashboard/public/assets/bm3group.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">

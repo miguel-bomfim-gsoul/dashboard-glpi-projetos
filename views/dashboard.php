@@ -100,7 +100,6 @@ if ($projectsJson === false) {
       height: 64px;
       width: 64px;
       border: 1px solid rgba(255, 255, 255, .32);
-      border-radius: 14px;
       display: grid;
       place-items: center;
       font-family: Sora;
@@ -143,7 +142,6 @@ if ($projectsJson === false) {
       background: rgba(255, 255, 255, .1);
       border: 1px solid rgba(255, 255, 255, .25);
       padding: 8px 12px;
-      border-radius: var(--radius-sm);
       font-weight: 800
     }
 
@@ -174,8 +172,31 @@ if ($projectsJson === false) {
       background: var(--card);
       border: 1px solid var(--border);
       border-top: 4px solid var(--accent, var(--petrol-700));
-      border-radius: var(--radius-md);
       padding: 18px;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      text-align: left;
+      transition: background .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+      width: 100%;
+      appearance: none;
+      font: inherit
+    }
+
+    .summary-card:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md)
+    }
+
+    .summary-card.active {
+      background: color-mix(in srgb, var(--accent, var(--petrol-700)) 12%, #fff);
+      border-color: var(--accent, var(--petrol-700));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--petrol-700)) 18%, transparent), var(--shadow-sm)
+    }
+
+    .summary-card.disabled {
+      cursor: not-allowed;
+      opacity: .55;
+      transform: none;
       box-shadow: var(--shadow-sm)
     }
 
@@ -280,7 +301,6 @@ if ($projectsJson === false) {
     .project-card {
       background: #fff;
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
       padding: 20px;
       box-shadow: var(--shadow-sm);
       display: flex;
@@ -587,6 +607,12 @@ if ($projectsJson === false) {
     const filtroBusca = document.getElementById('filtroBusca');
     const resetFiltros = document.getElementById('resetFiltros');
     const resultsCount = document.getElementById('resultsCount');
+    const filtros = {
+      departamento: 'todos',
+      status: 'todos',
+      responsavel: 'todos',
+      busca: ''
+    };
     const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, c => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -596,6 +622,36 @@ if ($projectsJson === false) {
     } [c]));
     const badgeClass = status => (STATUS_CONFIG[status] && STATUS_CONFIG[status].badge) || "espera";
     const barColor = status => (STATUS_CONFIG[status] && STATUS_CONFIG[status].bar) || "var(--status-espera-dot)";
+
+    function responsibleNames(project) {
+      return Array.isArray(project.responsaveis) ? project.responsaveis : [project.responsavel];
+    }
+
+    function matchesSearch(project) {
+      if (!filtros.busca) return true;
+      return String(project.projeto).toLowerCase().includes(filtros.busca) ||
+        String(project.responsavel).toLowerCase().includes(filtros.busca) ||
+        String(project.observacao).toLowerCase().includes(filtros.busca);
+    }
+
+    function filteredProjects(overrides = {}) {
+      const active = {
+        ...filtros,
+        ...overrides
+      };
+      return projetos.filter(project => {
+        const nomes = responsibleNames(project);
+        const okBusca = !active.busca ||
+          String(project.projeto).toLowerCase().includes(active.busca) ||
+          String(project.responsavel).toLowerCase().includes(active.busca) ||
+          String(project.observacao).toLowerCase().includes(active.busca);
+
+        return (active.departamento === 'todos' || project.departamento === active.departamento) &&
+          (active.status === 'todos' || project.status === active.status) &&
+          (active.responsavel === 'todos' || nomes.includes(active.responsavel)) &&
+          okBusca;
+      });
+    }
 
     function renderSummary(lista) {
       const counts = {
@@ -609,22 +665,45 @@ if ($projectsJson === false) {
         if (counts[p.status] !== undefined) counts[p.status]++;
       });
       const cards = [
-        ["Total de projetos", lista.length, "var(--petrol-700)", null],
-        ["Em execucao", counts["Em execucao"], "var(--status-exec-dot)", "var(--status-exec-dot)"],
-        ["Pendentes", counts["Pendente"], "var(--status-pend-dot)", "var(--status-pend-dot)"],
-        ["Em espera", counts["Em espera"], "var(--status-espera-dot)", "var(--status-espera-dot)"],
-        ["Concluidos", counts["Concluido"], "var(--status-concl-dot)", "var(--status-concl-dot)"]
+        ["Total de projetos", lista.length, "var(--petrol-700)", null, "todos"],
+        ["Em execucao", counts["Em execucao"], "var(--status-exec-dot)", "var(--status-exec-dot)", "Em execucao"],
+        ["Pendentes", counts["Pendente"], "var(--status-pend-dot)", "var(--status-pend-dot)", "Pendente"],
+        ["Em espera", counts["Em espera"], "var(--status-espera-dot)", "var(--status-espera-dot)", "Em espera"],
+        ["Concluidos", counts["Concluido"], "var(--status-concl-dot)", "var(--status-concl-dot)", "Concluido"]
       ];
-      summaryGrid.innerHTML = cards.map(([label, value, accent, dot]) => `<div class="summary-card" style="--accent:${accent}"><div class="label">${dot ? `<span class="dot" style="background:${dot}"></span>` : ''}${label}</div><div class="value">${value}</div></div>`).join('');
+      summaryGrid.innerHTML = cards.map(([label, value, accent, dot, status]) => {
+        const active = filtros.status === status || (status === 'todos' && filtros.status === 'todos');
+        const disabled = value === 0 && status !== 'todos';
+        return `<button type="button" class="summary-card ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}" style="--accent:${accent}" data-status="${escapeHtml(status)}" ${disabled ? 'disabled' : ''}><div class="label">${dot ? `<span class="dot" style="background:${dot}"></span>` : ''}${label}</div><div class="value">${value}</div></button>`;
+      }).join('');
     }
 
-    function popularFiltros() {
-      const departamentos = [...new Set(projetos.map(p => p.departamento))].sort();
-      const statusList = [...new Set(projetos.map(p => p.status))].sort();
-      const responsaveis = [...new Set(projetos.flatMap(p => Array.isArray(p.responsaveis) ? p.responsaveis : [p.responsavel]).filter(Boolean))].sort();
-      filtroDepto.innerHTML = '<option value="todos">Todos os departamentos</option>' + departamentos.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
-      filtroStatus.innerHTML = '<option value="todos">Todos os status</option>' + statusList.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-      filtroResponsavel.innerHTML = '<option value="todos">Todos os responsaveis</option>' + responsaveis.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+    function renderSelect(select, options, selected, allLabel) {
+      const values = ['todos', ...options];
+      select.innerHTML = values.map(value => {
+        const label = value === 'todos' ? allLabel : value;
+        return `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+      }).join('');
+    }
+
+    function updateFilterOptions() {
+      const departamentos = [...new Set(filteredProjects({
+        departamento: 'todos'
+      }).map(p => p.departamento))].sort();
+      const statusList = [...new Set(filteredProjects({
+        status: 'todos'
+      }).map(p => p.status))].sort();
+      const responsaveis = [...new Set(filteredProjects({
+        responsavel: 'todos'
+      }).flatMap(responsibleNames).filter(Boolean))].sort();
+
+      if (filtros.departamento !== 'todos' && !departamentos.includes(filtros.departamento)) filtros.departamento = 'todos';
+      if (filtros.status !== 'todos' && !statusList.includes(filtros.status)) filtros.status = 'todos';
+      if (filtros.responsavel !== 'todos' && !responsaveis.includes(filtros.responsavel)) filtros.responsavel = 'todos';
+
+      renderSelect(filtroDepto, departamentos, filtros.departamento, 'Todos os departamentos');
+      renderSelect(filtroStatus, statusList, filtros.status, 'Todos os status');
+      renderSelect(filtroResponsavel, responsaveis, filtros.responsavel, 'Todos os responsaveis');
     }
 
     function renderCards(lista) {
@@ -644,33 +723,47 @@ if ($projectsJson === false) {
     }
 
     function aplicarFiltros() {
-      const depto = filtroDepto.value,
-        status = filtroStatus.value,
-        responsavel = filtroResponsavel.value,
-        busca = filtroBusca.value.trim().toLowerCase();
-      const filtrados = projetos.filter(p => {
-        const nomes = Array.isArray(p.responsaveis) ? p.responsaveis : [p.responsavel];
-        const okBusca = !busca || String(p.projeto).toLowerCase().includes(busca) || String(p.responsavel).toLowerCase().includes(busca) || String(p.observacao).toLowerCase().includes(busca);
-        return (depto === 'todos' || p.departamento === depto) && (status === 'todos' || p.status === status) && (responsavel === 'todos' || nomes.includes(responsavel)) && okBusca;
-      });
+      updateFilterOptions();
+      const filtrados = filteredProjects();
+      renderSummary(filteredProjects({
+        status: 'todos'
+      }));
       renderCards(filtrados);
       renderTable(filtrados);
       resultsCount.innerHTML = `Exibindo <strong>${filtrados.length}</strong> de <strong>${projetos.length}</strong> chamado(s) com projeto`;
     }
-    [filtroDepto, filtroStatus, filtroResponsavel].forEach(el => el.addEventListener('change', aplicarFiltros));
-    filtroBusca.addEventListener('input', aplicarFiltros);
+
+    filtroDepto.addEventListener('change', () => {
+      filtros.departamento = filtroDepto.value;
+      aplicarFiltros();
+    });
+    filtroStatus.addEventListener('change', () => {
+      filtros.status = filtroStatus.value;
+      aplicarFiltros();
+    });
+    filtroResponsavel.addEventListener('change', () => {
+      filtros.responsavel = filtroResponsavel.value;
+      aplicarFiltros();
+    });
+    filtroBusca.addEventListener('input', () => {
+      filtros.busca = filtroBusca.value.trim().toLowerCase();
+      aplicarFiltros();
+    });
+    summaryGrid.addEventListener('click', event => {
+      const card = event.target.closest('.summary-card');
+      if (!card || card.disabled) return;
+      filtros.status = card.dataset.status || 'todos';
+      aplicarFiltros();
+    });
     resetFiltros.addEventListener('click', () => {
-      filtroDepto.value = 'todos';
-      filtroStatus.value = 'todos';
-      filtroResponsavel.value = 'todos';
+      filtros.departamento = 'todos';
+      filtros.status = 'todos';
+      filtros.responsavel = 'todos';
+      filtros.busca = '';
       filtroBusca.value = '';
       aplicarFiltros();
     });
-    popularFiltros();
-    renderSummary(projetos);
-    renderCards(projetos);
-    renderTable(projetos);
-    resultsCount.innerHTML = `Exibindo <strong>${projetos.length}</strong> de <strong>${projetos.length}</strong> chamado(s) com projeto`;
+    aplicarFiltros();
   </script>
 </body>
 

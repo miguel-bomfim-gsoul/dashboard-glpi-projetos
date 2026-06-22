@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 date_default_timezone_set('America/Sao_Paulo');
 
-const GLPI_PROJECT_FIELD = '10500';
 const GLPI_PAGE_SIZE = 50;
 
 define('GLPI_BASE_URL', getenv('GLPI_BASE_URL') ?: 'https://chamados.bm3group.com.br/apirest.php');
 define('GLPI_APP_TOKEN', getenv('GLPI_APP_TOKEN') ?: 'b98jUvA2vu9rW43hspxOuYDwZPYFEtW78tKDtM69');
 define('GLPI_USER_TOKEN', getenv('GLPI_USER_TOKEN') ?: 'qZXkqOrKgiw9Fcr7svsXsGqGXM4OucaL60d0i5gh');
 define('GLPI_SSL_VERIFY', filter_var(getenv('GLPI_SSL_VERIFY') ?: 'false', FILTER_VALIDATE_BOOLEAN));
+define('GLPI_PROJECT_FIELD', getenv('GLPI_PROJECT_FIELD') ?: '10500');
+define('GLPI_PROJECT_TAG', getenv('GLPI_PROJECT_TAG') ?: '3');
+define('GLPI_PROJECT_TAG_LABEL', getenv('GLPI_PROJECT_TAG_LABEL') ?: 'PROJETOS');
 
 $errorMessage = null;
 $projects = [];
@@ -73,6 +75,7 @@ function fetchProjectTickets(): array
 {
     $sessionToken = initGlpiSession();
     $tickets = [];
+    $userCache = [];
     $start = 0;
     $totalCount = null;
 
@@ -96,7 +99,7 @@ function fetchProjectTickets(): array
                 continue;
             }
 
-            $tickets[] = normalizeProjectTicket($row, $projectTag);
+            $tickets[] = normalizeProjectTicket($row, $projectTag, $sessionToken, $userCache);
         }
 
         $start += GLPI_PAGE_SIZE;
@@ -110,12 +113,22 @@ function buildTicketQuery(int $start): array
     $query = [
         'criteria' => [
             [
+                'link' => 'AND',
+                'field' => GLPI_PROJECT_FIELD,
+                'searchtype' => 'equals',
+                'value' => GLPI_PROJECT_TAG,
+            ],
+            [
+                'link' => 'AND',
                 'field' => 12,
                 'searchtype' => 'equals',
                 'value' => 'notold',
             ],
         ],
         'range' => $start . '-' . ($start + GLPI_PAGE_SIZE - 1),
+        'expand_dropdowns' => true,
+        'sort' => [19],
+        'order' => ['DESC'],
     ];
 
     foreach ([1, 2, 3, 4, 5, 12, 15, 19, 80, 83, GLPI_PROJECT_FIELD] as $index => $field) {
@@ -125,24 +138,63 @@ function buildTicketQuery(int $start): array
     return $query;
 }
 
-function normalizeProjectTicket(array $ticket, string $projectTag): array
+function normalizeProjectTicket(array $ticket, string $projectTag, string $sessionToken, array &$userCache): array
 {
     $statusId = (string) glpiValue($ticket['12'] ?? '');
     $ticketId = glpiValue($ticket['2'] ?? '');
     $title = glpiValue($ticket['1'] ?? '');
-    $assignee = glpiValue($ticket['5'] ?? '') ?: glpiValue($ticket['4'] ?? '') ?: 'Nao informado';
+    $assignee = resolveTicketUser($ticket['5'] ?? null, $sessionToken, $userCache)
+        ?: resolveTicketUser($ticket['4'] ?? null, $sessionToken, $userCache)
+        ?: 'Nao informado';
     $entity = glpiValue($ticket['80'] ?? '') ?: 'Sem entidade';
     $updatedAt = glpiValue($ticket['19'] ?? '') ?: glpiValue($ticket['15'] ?? '');
 
     return [
         'departamento' => $entity,
-        'projeto' => $projectTag,
+        'projeto' => $title ?: GLPI_PROJECT_TAG_LABEL,
         'responsavel' => $assignee,
         'prazo' => formatDateForDisplay($updatedAt),
         'status' => dashboardStatus($statusId),
         'progresso' => dashboardProgress($statusId),
-        'observacao' => trim('#' . $ticketId . ' - ' . $title),
+        'observacao' => trim('#' . $ticketId . ' - Etiqueta: ' . ($projectTag ?: GLPI_PROJECT_TAG_LABEL)),
     ];
+}
+
+function resolveTicketUser(mixed $value, string $sessionToken, array &$userCache): string
+{
+    $label = glpiValue($value);
+    if ($label !== '' && !ctype_digit($label)) {
+        return $label;
+    }
+
+    $userId = glpiId($value) ?: (ctype_digit($label) ? $label : '');
+    if ($userId === '') {
+        return $label;
+    }
+
+    if (isset($userCache[$userId])) {
+        return $userCache[$userId];
+    }
+
+    try {
+        $user = glpiRequest('GET', GLPI_BASE_URL . '/User/' . rawurlencode($userId), [
+            'App-Token: ' . GLPI_APP_TOKEN,
+            'Session-Token: ' . $sessionToken,
+            'Content-Type: application/json',
+        ]);
+
+        $nameParts = array_filter([
+            trim((string) ($user['firstname'] ?? '')),
+            trim((string) ($user['realname'] ?? '')),
+        ]);
+
+        $resolvedName = trim(implode(' ', $nameParts)) ?: trim((string) ($user['name'] ?? '')) ?: $userId;
+    } catch (Throwable) {
+        $resolvedName = $userId;
+    }
+
+    $userCache[$userId] = $resolvedName;
+    return $resolvedName;
 }
 
 function glpiValue(mixed $value): string
@@ -156,6 +208,24 @@ function glpiValue(mixed $value): string
     }
 
     return trim((string) $value);
+}
+
+function glpiId(mixed $value): string
+{
+    if (is_array($value)) {
+        if (isset($value['id']) && ctype_digit((string) $value['id'])) {
+            return (string) $value['id'];
+        }
+
+        foreach ($value as $item) {
+            $id = glpiId($item);
+            if ($id !== '') {
+                return $id;
+            }
+        }
+    }
+
+    return ctype_digit((string) $value) ? (string) $value : '';
 }
 
 function dashboardStatus(string $statusId): string
@@ -350,6 +420,10 @@ if ($projectsJson === false) {
       <label for="filtroStatus">Status</label>
       <select id="filtroStatus"></select>
     </div>
+    <div class="filter-field">
+      <label for="filtroResponsavel">Responsavel</label>
+      <select id="filtroResponsavel"></select>
+    </div>
     <div class="filter-field search">
       <label for="filtroBusca">Buscar por projeto ou responsavel</label>
       <input type="text" id="filtroBusca" placeholder="Ex.: WMS, BI, nome do tecnico...">
@@ -401,6 +475,7 @@ const cardsGrid = document.getElementById('cardsGrid');
 const tableBody = document.getElementById('tableBody');
 const filtroDepto = document.getElementById('filtroDepartamento');
 const filtroStatus = document.getElementById('filtroStatus');
+const filtroResponsavel = document.getElementById('filtroResponsavel');
 const filtroBusca = document.getElementById('filtroBusca');
 const resetFiltros = document.getElementById('resetFiltros');
 const resultsCount = document.getElementById('resultsCount');
@@ -430,10 +505,13 @@ function renderSummary(lista){
 function popularFiltros(){
   const departamentos = [...new Set(projetos.map(p => p.departamento))].sort();
   const statusList = [...new Set(projetos.map(p => p.status))];
+  const responsaveis = [...new Set(projetos.map(p => p.responsavel).filter(Boolean))].sort();
   filtroDepto.innerHTML = '<option value="todos">Todos os departamentos</option>' +
     departamentos.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
   filtroStatus.innerHTML = '<option value="todos">Todos os status</option>' +
     statusList.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  filtroResponsavel.innerHTML = '<option value="todos">Todos os responsaveis</option>' +
+    responsaveis.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
 }
 function renderCards(lista){
   if (lista.length === 0) {
@@ -477,15 +555,17 @@ function renderTable(lista){
 function aplicarFiltros(){
   const depto = filtroDepto.value;
   const status = filtroStatus.value;
+  const responsavel = filtroResponsavel.value;
   const busca = filtroBusca.value.trim().toLowerCase();
   const filtrados = projetos.filter(p => {
     const okDepto = depto === 'todos' || p.departamento === depto;
     const okStatus = status === 'todos' || p.status === status;
+    const okResponsavel = responsavel === 'todos' || p.responsavel === responsavel;
     const okBusca = !busca ||
       String(p.projeto).toLowerCase().includes(busca) ||
       String(p.responsavel).toLowerCase().includes(busca) ||
       String(p.observacao).toLowerCase().includes(busca);
-    return okDepto && okStatus && okBusca;
+    return okDepto && okStatus && okResponsavel && okBusca;
   });
   renderCards(filtrados);
   renderTable(filtrados);
@@ -493,10 +573,12 @@ function aplicarFiltros(){
 }
 filtroDepto.addEventListener('change', aplicarFiltros);
 filtroStatus.addEventListener('change', aplicarFiltros);
+filtroResponsavel.addEventListener('change', aplicarFiltros);
 filtroBusca.addEventListener('input', aplicarFiltros);
 resetFiltros.addEventListener('click', () => {
   filtroDepto.value = 'todos';
   filtroStatus.value = 'todos';
+  filtroResponsavel.value = 'todos';
   filtroBusca.value = '';
   aplicarFiltros();
 });

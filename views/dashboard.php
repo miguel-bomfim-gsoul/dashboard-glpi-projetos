@@ -609,7 +609,7 @@ if ($projectsJson === false) {
     const resultsCount = document.getElementById('resultsCount');
     const filtros = {
       departamento: 'todos',
-      status: 'todos',
+      status: 'Em execucao',
       responsavel: 'todos',
       busca: ''
     };
@@ -711,7 +711,7 @@ if ($projectsJson === false) {
         cardsGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">Nenhum chamado com tag de projeto encontrado.</div>';
         return;
       }
-      cardsGrid.innerHTML = lista.map(p => `<div class="project-card"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}Atualizado: ${escapeHtml(p.prazo)}</div><div><div class="progress-label"><span>Progresso estimado</span><span>${Number(p.progresso)||0}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${Number(p.progresso)||0}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div></div>`).join('');
+      cardsGrid.innerHTML = lista.map(p => `<div class="project-card"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}Atualizado: ${escapeHtml(p.prazo)}</div><div><div class="progress-label"><span>Progresso</span><span>${Number(p.progresso)||0}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${Number(p.progresso)||0}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div></div>`).join('');
     }
 
     function renderTable(lista) {

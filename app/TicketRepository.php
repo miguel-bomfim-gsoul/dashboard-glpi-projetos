@@ -58,7 +58,22 @@ function build_project_ticket_query(array $config, int $start, int $pageSize): a
         'order' => ['DESC'],
     ];
 
-    foreach ([1, 2, 3, 4, 5, 12, 15, 19, 80, 83, $projectField] as $index => $field) {
+    $displayFields = [
+        1,
+        2,
+        3,
+        4,
+        5,
+        12,
+        $config['glpi']['open_date_field'],
+        $config['glpi']['solution_time_field'],
+        19,
+        80,
+        83,
+        $projectField,
+    ];
+
+    foreach (array_values(array_unique($displayFields)) as $index => $field) {
         $query['forcedisplay'][$index] = $field;
     }
 

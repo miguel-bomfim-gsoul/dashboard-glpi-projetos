@@ -8,6 +8,8 @@ function map_ticket_to_project(array $ticket, array $config): array
     $statusId = value_to_string($ticket['12'] ?? '');
     $ticketId = value_to_string($ticket['2'] ?? '');
     $title = value_to_string($ticket['1'] ?? '');
+    $openedAt = value_to_string($ticket[$config['glpi']['open_date_field']] ?? '');
+    $solutionTime = value_to_string($ticket[$config['glpi']['solution_time_field']] ?? '');
     $assignees = resolve_ticket_users($ticket['5'] ?? null, $config['users']);
     if ($assignees === []) {
         $assignees = ['Não atribuído'];
@@ -20,7 +22,7 @@ function map_ticket_to_project(array $ticket, array $config): array
         'responsaveis' => $assignees,
         'prazo' => format_date_br(value_to_string($ticket['19'] ?? '') ?: value_to_string($ticket['15'] ?? '')),
         'status' => dashboard_status($statusId),
-        'progresso' => dashboard_progress($statusId),
+        'progresso' => dashboard_progress($statusId, $openedAt, $solutionTime),
         'observacao' => trim('#' . $ticketId . ' - Etiqueta: ' . ($projectTag ?: $config['glpi']['project_tag_label'])),
     ];
 }
@@ -69,21 +71,38 @@ function dashboard_status(string $statusId): string
     }
 }
 
-function dashboard_progress(string $statusId): int
+function dashboard_progress(string $statusId, string $openedAt, string $solutionTime): int
 {
-    switch ($statusId) {
-        case '1':
-            return 10;
-        case '2':
-            return 45;
-        case '3':
-            return 65;
-        case '4':
-            return 35;
-        case '5':
-        case '6':
-            return 100;
-        default:
-            return 0;
+    if ($statusId === '5' || $statusId === '6') {
+        return 100;
+    }
+
+    $openedAtTimestamp = glpi_date_timestamp($openedAt);
+    $solutionTimeTimestamp = glpi_date_timestamp($solutionTime);
+
+    if ($openedAtTimestamp === null || $solutionTimeTimestamp === null || $solutionTimeTimestamp <= $openedAtTimestamp) {
+        return 0;
+    }
+
+    $elapsed = time() - $openedAtTimestamp;
+    $total = $solutionTimeTimestamp - $openedAtTimestamp;
+
+    if ($elapsed <= 0) {
+        return 0;
+    }
+
+    return max(0, min(100, (int) round(($elapsed / $total) * 100)));
+}
+
+function glpi_date_timestamp(string $value)
+{
+    if ($value === '') {
+        return null;
+    }
+
+    try {
+        return (new DateTimeImmutable($value))->getTimestamp();
+    } catch (Throwable $error) {
+        return null;
     }
 }

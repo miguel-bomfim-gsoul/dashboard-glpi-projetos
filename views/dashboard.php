@@ -544,8 +544,8 @@ if ($projectsJson === false) {
     <section class="filters">
       <div class="filter-field"><label for="filtroDepartamento">Departamento</label><select id="filtroDepartamento"></select></div>
       <div class="filter-field"><label for="filtroStatus">Status</label><select id="filtroStatus"></select></div>
-      <div class="filter-field"><label for="filtroResponsavel">Responsavel</label><select id="filtroResponsavel"></select></div>
-      <div class="filter-field search"><label for="filtroBusca">Buscar por projeto ou responsavel</label><input id="filtroBusca" type="text" placeholder="Ex.: WMS, BI, nome do tecnico..."></div>
+      <div class="filter-field"><label for="filtroResponsavel">Responsável</label><select id="filtroResponsavel"></select></div>
+      <div class="filter-field search"><label for="filtroBusca">Buscar por projeto ou responsável</label><input id="filtroBusca" type="text" placeholder="Ex.: WMS, BI, nome do tecnico..."></div>
       <button class="filter-reset" id="resetFiltros">Limpar filtros</button>
     </section>
     <p class="results-count" id="resultsCount"></p>

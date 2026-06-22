@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-function glpi_request(array $config, string $method, string $path, ?array $query = null, ?string $sessionToken = null): array
+function glpi_request(array $config, string $method, string $path, $query = null, $sessionToken = null): array
 {
     $glpi = $config['glpi'];
     $url = $glpi['base_url'] . $path;
-    if ($query) {
+    if (is_array($query) && $query !== []) {
         $url .= '?' . http_build_query($query);
     }
 

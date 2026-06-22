@@ -25,7 +25,7 @@ function map_ticket_to_project(array $ticket, array $config): array
     ];
 }
 
-function resolve_ticket_users(mixed $value, array $userNames): array
+function resolve_ticket_users($value, array $userNames): array
 {
     $label = value_to_string($value);
     if ($label === '') {
@@ -54,22 +54,36 @@ function resolve_ticket_users(mixed $value, array $userNames): array
 
 function dashboard_status(string $statusId): string
 {
-    return match ($statusId) {
-        '1', '2', '3' => 'Em execucao',
-        '4' => 'Pendente',
-        '5', '6' => 'Concluido',
-        default => 'Pendente',
-    };
+    switch ($statusId) {
+        case '1':
+        case '2':
+        case '3':
+            return 'Em execucao';
+        case '4':
+            return 'Pendente';
+        case '5':
+        case '6':
+            return 'Concluido';
+        default:
+            return 'Pendente';
+    }
 }
 
 function dashboard_progress(string $statusId): int
 {
-    return match ($statusId) {
-        '1' => 10,
-        '2' => 45,
-        '3' => 65,
-        '4' => 35,
-        '5', '6' => 100,
-        default => 0,
-    };
+    switch ($statusId) {
+        case '1':
+            return 10;
+        case '2':
+            return 45;
+        case '3':
+            return 65;
+        case '4':
+            return 35;
+        case '5':
+        case '6':
+            return 100;
+        default:
+            return 0;
+    }
 }

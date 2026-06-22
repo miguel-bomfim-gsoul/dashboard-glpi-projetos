@@ -8,7 +8,9 @@ function dashboard_projects(array $config): array
     $rows = fetch_project_ticket_rows($config, $sessionToken);
 
     return array_map(
-        static fn(array $row): array => map_ticket_to_project($row, $config),
+        static function (array $row) use ($config): array {
+            return map_ticket_to_project($row, $config);
+        },
         $rows
     );
 }

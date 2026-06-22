@@ -35,7 +35,7 @@ function load_config(string $envFile): array
     ];
 }
 
-function load_env_file(string $path): void
+function load_env_file(string $path)
 {
     if (!is_file($path)) {
         return;
@@ -48,11 +48,13 @@ function load_env_file(string $path): void
 
     foreach ($lines as $line) {
         $line = trim($line);
-        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+        if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
             continue;
         }
 
-        [$key, $value] = array_map('trim', explode('=', $line, 2));
+        $parts = array_map('trim', explode('=', $line, 2));
+        $key = $parts[0];
+        $value = $parts[1];
         if ($key !== '' && getenv($key) === false) {
             putenv($key . '=' . trim($value, "\"'"));
         }

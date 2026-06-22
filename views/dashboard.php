@@ -551,7 +551,7 @@ if ($projectsJson === false) {
     <p class="results-count" id="resultsCount"></p>
     <section class="cards-grid" id="cardsGrid"></section>
     <div class="section-title">
-      <h2>Visao geral em tabela</h2>
+      <h2>Visão geral em tabela</h2>
     </div>
     <div class="table-wrap">
       <div class="table-wrap-scroll">
@@ -560,7 +560,7 @@ if ($projectsJson === false) {
             <tr>
               <th>Departamento</th>
               <th>Projeto</th>
-              <th>Responsavel</th>
+              <th>Responsável</th>
               <th>Status</th>
               <th>Progresso</th>
               <th>Ultima atualizacao</th>

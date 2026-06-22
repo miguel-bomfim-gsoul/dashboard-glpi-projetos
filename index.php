@@ -15,7 +15,9 @@ const GLPI_USER_NAMES = [
   '587' => 'Matheus Monteiro',
   '656' => 'Miguel Bomfim',
   '382' => 'Patrick Schlemper',
-  '405' => 'Daniel Floriano'
+  '405' => 'Daniel Floriano',
+  '804' => 'Kauan Souza',
+  '839' => 'Suyane Ferreira'
   // Adicione novos IDs aqui no formato: '123' => 'Nome do Usuario',
 ];
 

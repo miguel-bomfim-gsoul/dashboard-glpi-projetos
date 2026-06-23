@@ -109,12 +109,12 @@ function dashboard_status(string $statusId): string
         case '1':
         case '2':
         case '3':
-            return 'Em execucao';
+            return 'Em execução';
         case '4':
             return 'Pendente';
         case '5':
         case '6':
-            return 'Concluido';
+            return 'Concluído';
         default:
             return 'Pendente';
     }

@@ -592,7 +592,7 @@ if ($projectsJson === false) {
         <div class="brand-mark"><img src="/dashboard/public/assets/bm3group.png" alt="BM3 Group Logo"></div>
         <div class="brand-divider"></div>
         <div class="brand-text">
-          <h1>Dashboard de Projetos em Execucao</h1>
+          <h1>Dashboard de Projetos em Execução</h1>
           <p>Chamados GLPI com tag/campo de projeto preenchido</p>
         </div>
       </div>
@@ -644,7 +644,7 @@ if ($projectsJson === false) {
   <script>
     const projetos = <?= $projectsJson ?>;
     const STATUS_CONFIG = {
-      "Em execucao": {
+      "Em execução": {
         badge: "exec",
         bar: "var(--status-exec-dot)"
       },
@@ -656,7 +656,7 @@ if ($projectsJson === false) {
         badge: "espera",
         bar: "var(--status-espera-dot)"
       },
-      "Concluido": {
+      "Concluído": {
         badge: "concl",
         bar: "var(--status-concl-dot)"
       },
@@ -681,7 +681,7 @@ if ($projectsJson === false) {
     const resultsCount = document.getElementById('resultsCount');
     const filtros = {
       departamento: 'todos',
-      status: 'Em execucao',
+      status: 'Em execução',
       responsavel: 'todos',
       prioridade: 'todos',
       busca: ''
@@ -734,10 +734,10 @@ if ($projectsJson === false) {
 
     function renderSummary(lista) {
       const counts = {
-        "Em execucao": 0,
+        "Em execução": 0,
         "Pendente": 0,
         "Em espera": 0,
-        "Concluido": 0,
+        "Concluído": 0,
         "Atrasado": 0
       };
       lista.forEach(p => {
@@ -745,10 +745,10 @@ if ($projectsJson === false) {
       });
       const cards = [
         ["Total de projetos", lista.length, "var(--petrol-700)", null, "todos"],
-        ["Em execucao", counts["Em execucao"], "var(--status-exec-dot)", "var(--status-exec-dot)", "Em execucao"],
+        ["Em execução", counts["Em execução"], "var(--status-exec-dot)", "var(--status-exec-dot)", "Em execução"],
         ["Pendentes", counts["Pendente"], "var(--status-pend-dot)", "var(--status-pend-dot)", "Pendente"],
         ["Em espera", counts["Em espera"], "var(--status-espera-dot)", "var(--status-espera-dot)", "Em espera"],
-        ["Concluidos", counts["Concluido"], "var(--status-concl-dot)", "var(--status-concl-dot)", "Concluido"]
+        ["Concluídos", counts["Concluído"], "var(--status-concl-dot)", "var(--status-concl-dot)", "Concluído"]
       ];
       summaryGrid.innerHTML = cards.map(([label, value, accent, dot, status]) => {
         const active = filtros.status === status || (status === 'todos' && filtros.status === 'todos');

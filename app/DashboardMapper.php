@@ -31,6 +31,7 @@ function map_ticket_to_project(array $ticket, array $config): array
         'prioridade' => $priority['label'],
         'prioridadeFiltro' => $priority['filter'],
         'prioridadeClasse' => $priority['class'],
+        'prioridadeOrdem' => $priority['order'],
         'observacao' => trim('#' . $ticketId . ' - Etiqueta: ' . ($projectTag ?: $config['glpi']['project_tag_label'])),
     ];
 }
@@ -44,16 +45,27 @@ function ticket_priority_from_category(string $category): array
             'label' => 'Sem prioridade',
             'filter' => 'Sem prioridade',
             'class' => 'priority-none',
+            'order' => 999999,
         ];
     }
 
     $number = (int) $category;
+
+    if ($number === 0) {
+        return [
+            'label' => 'Sem prioridade',
+            'filter' => 'Sem prioridade',
+            'class' => 'priority-none',
+            'order' => 999999,
+        ];
+    }
 
     if ($number === 1) {
         return [
             'label' => 'Prioridade alta',
             'filter' => 'Alta',
             'class' => 'priority-1',
+            'order' => $number,
         ];
     }
 
@@ -61,6 +73,7 @@ function ticket_priority_from_category(string $category): array
         'label' => 'Prioridade baixa',
         'filter' => 'Baixa',
         'class' => 'priority-other',
+        'order' => $number,
     ];
 }
 

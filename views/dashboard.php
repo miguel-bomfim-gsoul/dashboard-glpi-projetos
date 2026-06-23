@@ -705,6 +705,11 @@ if ($projectsJson === false) {
       return Array.isArray(project.responsaveis) ? project.responsaveis : [project.responsavel];
     }
 
+    function priorityOrder(project) {
+      const order = Number(project.prioridadeOrdem);
+      return Number.isFinite(order) && order > 0 ? order : Number.MAX_SAFE_INTEGER;
+    }
+
     function matchesSearch(project) {
       if (!filtros.busca) return true;
       return String(project.projeto).toLowerCase().includes(filtros.busca) ||
@@ -729,7 +734,9 @@ if ($projectsJson === false) {
           (active.responsavel === 'todos' || nomes.includes(active.responsavel)) &&
           (active.prioridade === 'todos' || project.prioridadeFiltro === active.prioridade) &&
           okBusca;
-      });
+      }).sort((a, b) => priorityOrder(a) - priorityOrder(b) ||
+        String(a.departamento).localeCompare(String(b.departamento), 'pt-BR') ||
+        String(a.projeto).localeCompare(String(b.projeto), 'pt-BR'));
     }
 
     function renderSummary(lista) {

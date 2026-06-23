@@ -630,7 +630,7 @@ if ($projectsJson === false) {
               <th>Projeto</th>
               <th>Responsável</th>
               <th>Status</th>
-              <th>Progresso</th>
+              <th>Prazo</th>
               <th>Abertura / solucao</th>
               <th>Chamado</th>
             </tr>
@@ -795,7 +795,7 @@ if ($projectsJson === false) {
         cardsGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">Nenhum chamado com tag de projeto encontrado.</div>';
         return;
       }
-      cardsGrid.innerHTML = lista.map(p => `<div class="project-card ${escapeHtml(p.prioridadeClasse)}"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}${escapeHtml(p.periodo_sla)}</div><div><div class="progress-label"><span>Progresso</span><span>${escapeHtml(progressLabel(p))}</span></div><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div><span class="priority-chip ${escapeHtml(p.prioridadeClasse)}">${escapeHtml(p.prioridade)}</span></div>`).join('');
+      cardsGrid.innerHTML = lista.map(p => `<div class="project-card ${escapeHtml(p.prioridadeClasse)}"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}${escapeHtml(p.periodo_sla)}</div><div><div class="progress-label"><span>Prazo de entrega</span><span>${escapeHtml(progressLabel(p))}</span></div><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div><span class="priority-chip ${escapeHtml(p.prioridadeClasse)}">${escapeHtml(p.prioridade)}</span></div>`).join('');
     }
 
     function renderTable(lista) {

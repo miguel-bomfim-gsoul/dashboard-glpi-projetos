@@ -1029,7 +1029,7 @@ if ($projectsJson === false) {
       if (filtros.responsavel !== 'todos' && !responsaveis.includes(filtros.responsavel)) filtros.responsavel = 'todos';
       if (filtros.prioridade !== 'todos' && !prioridades.includes(filtros.prioridade)) filtros.prioridade = 'todos';
 
-      renderSelect(filtroDepto, departamentos, filtros.departamento, 'Todos os departamentos');
+      renderSelect(filtroDepto, departamentos, filtros.departamento, 'Todas as departamentos');
       renderSelect(filtroStatus, statusList, filtros.status, 'Todos os status');
       renderSelect(filtroResponsavel, responsaveis, filtros.responsavel, 'Todos os responsaveis');
       renderSelect(filtroPrioridade, prioridades, filtros.prioridade, 'Todas as prioridades');

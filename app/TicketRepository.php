@@ -192,7 +192,7 @@ function build_project_ticket_query(array $config, int $start, int $pageSize): a
         $config['glpi']['solution_time_field'],
         19,
         80,
-        83,
+        $config['glpi']['location_field'],
         $projectField,
     ];
 

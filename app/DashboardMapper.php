@@ -19,7 +19,7 @@ function map_ticket_to_project(array $ticket, array $config): array
     }
 
     return [
-        'departamento' => value_to_string($ticket['80'] ?? '') ?: 'Sem entidade',
+        'departamento' => value_to_string($ticket[$config['glpi']['location_field']] ?? '') ?: 'Sem localizacao',
         'chamadoId' => $ticketId,
         'projeto' => $title ?: $config['glpi']['project_tag_label'],
         'responsavel' => implode(', ', $assignees),

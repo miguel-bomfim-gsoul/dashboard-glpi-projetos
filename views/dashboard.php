@@ -469,6 +469,143 @@ if ($projectsJson === false) {
       color: var(--priority-none-fg)
     }
 
+    .task-toggle {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--petrol-800);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      align-self: flex-start
+    }
+
+    .task-toggle:hover,
+    .task-toggle[aria-expanded="true"] {
+      border-color: var(--teal-500);
+      background: #EEF8F9
+    }
+
+    .task-empty {
+      border-radius: var(--radius-sm);
+      background: var(--priority-none-bg);
+      color: var(--priority-none-fg);
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      align-self: flex-start;
+      display: inline-flex
+    }
+
+    .task-caret {
+      font-size: 11px;
+      line-height: 1
+    }
+
+    .task-panel {
+      display: none;
+      border: 1px solid var(--border);
+      background: #FBFCFC;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-top: -4px
+    }
+
+    .task-panel.open {
+      display: block
+    }
+
+    .task-list {
+      display: grid;
+      gap: 10px
+    }
+
+    .task-item {
+      --task-accent: var(--teal-500);
+      --task-bg: #fff;
+      --task-soft: #EEF8F9;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--task-accent);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      padding: 11px 12px;
+      box-shadow: var(--shadow-sm);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start
+    }
+
+    .task-item.done {
+      --task-accent: #2E9E5B;
+      --task-soft: #E5F6EC
+    }
+
+    .task-item.todo {
+      --task-accent: #8A5800;
+      --task-soft: #FFF3DF
+    }
+
+    .task-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--task-soft);
+      color: var(--task-accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      line-height: 1;
+      flex: 0 0 auto
+    }
+
+    .task-title {
+      font-size: 13px;
+      color: var(--ink);
+      font-weight: 700;
+      line-height: 1.35
+    }
+
+    .task-status {
+      border-radius: 999px;
+      background: var(--task-soft);
+      color: var(--task-accent);
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 800
+    }
+
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--ink-soft);
+      font-size: 11px;
+      font-weight: 700;
+      align-items: center
+    }
+
+    .table-task-toggle {
+      white-space: nowrap
+    }
+
+    .task-row td {
+      padding: 0 16px 16px;
+      background: #FBFCFC
+    }
+
+    .task-row .task-panel {
+      display: block;
+      margin-top: 0
+    }
+
     .priority-dot {
       display: inline-block;
       width: 9px;
@@ -633,6 +770,7 @@ if ($projectsJson === false) {
               <th>Prazo</th>
               <th>Abertura / solucao</th>
               <th>Chamado</th>
+              <th>Tarefas</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -679,6 +817,8 @@ if ($projectsJson === false) {
     const filtroBusca = document.getElementById('filtroBusca');
     const resetFiltros = document.getElementById('resetFiltros');
     const resultsCount = document.getElementById('resultsCount');
+    const expandedTableTasks = new Set();
+    const taskCache = {};
     const filtros = {
       departamento: 'todos',
       status: 'Em execução',
@@ -708,6 +848,104 @@ if ($projectsJson === false) {
     function priorityOrder(project) {
       const order = Number(project.prioridadeOrdem);
       return Number.isFinite(order) && order > 0 ? order : Number.MAX_SAFE_INTEGER;
+    }
+
+    function projectKey(project) {
+      return String(project.chamadoId || project.observacao || project.projeto);
+    }
+
+    function projectTasks(project) {
+      const cache = taskCache[projectKey(project)];
+      return cache && Array.isArray(cache.tasks) ? cache.tasks : [];
+    }
+
+    function taskState(project) {
+      return taskCache[projectKey(project)] || {
+        status: 'idle',
+        tasks: []
+      };
+    }
+
+    function taskStatusClass(task) {
+      return String(task.status).toLowerCase() === 'feita' ? 'done' : 'todo';
+    }
+
+    function taskStatusIcon(task) {
+      return String(task.status).toLowerCase() === 'feita' ? '✓' : '!';
+    }
+
+    function renderTaskItems(project) {
+      const state = taskState(project);
+      if (state.status === 'loading') {
+        return '<div class="empty-state" style="padding:14px;">Carregando tarefas...</div>';
+      }
+
+      if (state.status === 'error') {
+        return `<div class="empty-state" style="padding:14px;">${escapeHtml(state.message || 'Nao foi possivel carregar as tarefas.')}</div>`;
+      }
+
+      const tasks = state.tasks;
+      if (tasks.length === 0) {
+        return '<div class="empty-state" style="padding:14px;">Nenhuma tarefa encontrada neste chamado.</div>';
+      }
+
+      return `<div class="task-list">${tasks.map(task => `<div class="task-item ${taskStatusClass(task)}"><span class="task-icon">${taskStatusIcon(task)}</span><div><div class="task-title">${escapeHtml(task.conteudo)}</div><div class="task-meta"><span>${escapeHtml(task.autor)}</span><span class="task-status">${escapeHtml(task.status)}</span><span>Criada em ${escapeHtml(task.criadoEm || 'A definir')}</span></div></div></div>`).join('')}</div>`;
+    }
+
+    function renderTaskToggle(project, extraClass = '') {
+      const key = projectKey(project);
+      const state = taskState(project);
+      const count = state.tasks.length;
+      const open = expandedTableTasks.has(key);
+      let label = 'Tarefas';
+
+      if (state.status === 'loading') {
+        label = 'Carregando...';
+      } else if (state.status === 'loaded') {
+        label = count === 0 ? 'Sem tarefas' : (count === 1 ? '1 tarefa' : `${count} tarefas`);
+      } else if (state.status === 'error') {
+        label = 'Erro ao carregar';
+      }
+
+      return `<button type="button" class="task-toggle ${extraClass}" data-task-key="${escapeHtml(key)}" aria-expanded="${open ? 'true' : 'false'}"><span class="task-caret">${open ? '▲' : '▼'}</span>${label}</button>`;
+    }
+
+    async function loadTasks(project) {
+      const key = projectKey(project);
+      const state = taskState(project);
+      if (state.status === 'loading' || state.status === 'loaded') return;
+
+      taskCache[key] = {
+        status: 'loading',
+        tasks: []
+      };
+      aplicarFiltros();
+
+      try {
+        const response = await fetch(`tasks.php?id=${encodeURIComponent(project.chamadoId)}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.error || 'Nao foi possivel carregar as tarefas.');
+        }
+
+        taskCache[key] = {
+          status: 'loaded',
+          tasks: Array.isArray(payload.tasks) ? payload.tasks : []
+        };
+      } catch (error) {
+        taskCache[key] = {
+          status: 'error',
+          tasks: [],
+          message: error.message || 'Nao foi possivel carregar as tarefas.'
+        };
+      }
+
+      aplicarFiltros();
     }
 
     function matchesSearch(project) {
@@ -802,15 +1040,23 @@ if ($projectsJson === false) {
         cardsGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">Nenhum chamado com tag de projeto encontrado.</div>';
         return;
       }
-      cardsGrid.innerHTML = lista.map(p => `<div class="project-card ${escapeHtml(p.prioridadeClasse)}"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}${escapeHtml(p.periodo_sla)}</div><div><div class="progress-label"><span>Prazo de entrega</span><span>${escapeHtml(progressLabel(p))}</span></div><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div><span class="priority-chip ${escapeHtml(p.prioridadeClasse)}">${escapeHtml(p.prioridade)}</span></div>`).join('');
+      cardsGrid.innerHTML = lista.map(p => {
+        return `<div class="project-card ${escapeHtml(p.prioridadeClasse)}"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}${escapeHtml(p.periodo_sla)}</div><div><div class="progress-label"><span>Prazo de entrega</span><span>${escapeHtml(progressLabel(p))}</span></div><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div><span class="priority-chip ${escapeHtml(p.prioridadeClasse)}">${escapeHtml(p.prioridade)}</span></div>`;
+      }).join('');
     }
 
     function renderTable(lista) {
       if (lista.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:30px;">Nenhum chamado encontrado.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);padding:30px;">Nenhum chamado encontrado.</td></tr>';
         return;
       }
-      tableBody.innerHTML = lista.map(p => `<tr><td><span class="priority-dot ${escapeHtml(p.prioridadeClasse)}"></span>${escapeHtml(p.departamento)}</td><td><strong>${escapeHtml(p.projeto)}</strong></td><td>${escapeHtml(p.responsavel)}</td><td><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></td><td><div class="table-progress"><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div><span>${escapeHtml(progressLabel(p))}</span></div></td><td>${escapeHtml(p.periodo_sla)}</td><td>${escapeHtml(p.observacao)}</td></tr>`).join('');
+      tableBody.innerHTML = lista.map(p => {
+        const key = projectKey(p);
+        const open = expandedTableTasks.has(key);
+        const row = `<tr><td><span class="priority-dot ${escapeHtml(p.prioridadeClasse)}"></span>${escapeHtml(p.departamento)}</td><td><strong>${escapeHtml(p.projeto)}</strong></td><td>${escapeHtml(p.responsavel)}</td><td><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></td><td><div class="table-progress"><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div><span>${escapeHtml(progressLabel(p))}</span></div></td><td>${escapeHtml(p.periodo_sla)}</td><td>${escapeHtml(p.observacao)}</td><td>${renderTaskToggle(p, 'table-task-toggle')}</td></tr>`;
+        const tasks = open ? `<tr class="task-row"><td colspan="8"><div class="task-panel">${renderTaskItems(p)}</div></td></tr>` : '';
+        return row + tasks;
+      }).join('');
     }
 
     function aplicarFiltros() {
@@ -849,6 +1095,27 @@ if ($projectsJson === false) {
       if (!card || card.disabled) return;
       filtros.status = card.dataset.status || 'todos';
       aplicarFiltros();
+    });
+    document.addEventListener('click', event => {
+      const button = event.target.closest('.task-toggle');
+      if (!button) return;
+
+      const key = button.dataset.taskKey;
+      if (!key) return;
+
+      if (expandedTableTasks.has(key)) {
+        expandedTableTasks.delete(key);
+      } else {
+        expandedTableTasks.add(key);
+      }
+
+      aplicarFiltros();
+      if (expandedTableTasks.has(key)) {
+        const project = projetos.find(item => projectKey(item) === key);
+        if (project) {
+          loadTasks(project);
+        }
+      }
     });
     resetFiltros.addEventListener('click', () => {
       filtros.departamento = 'todos';

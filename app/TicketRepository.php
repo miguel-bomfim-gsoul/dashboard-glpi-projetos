@@ -83,6 +83,78 @@ function itil_category_name(array $category): string
     return '';
 }
 
+function fetch_ticket_tasks(array $config, string $sessionToken, string $ticketId): array
+{
+    if ($ticketId === '' || !ctype_digit($ticketId)) {
+        return [];
+    }
+
+    $tasks = glpi_request($config, 'GET', '/Ticket/' . $ticketId . '/TicketTask', null, $sessionToken);
+    return normalize_ticket_tasks($tasks);
+}
+
+function normalize_ticket_tasks(array $response): array
+{
+    $rows = is_array($response['data'] ?? null) ? $response['data'] : $response;
+    $tasks = [];
+
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $content = ticket_task_content($row);
+        if ($content === '') {
+            continue;
+        }
+
+        $tasks[] = [
+            'id' => value_to_string($row['id'] ?? ''),
+            'conteudo' => $content,
+            'autor' => ticket_task_user($row),
+            'criadoEm' => format_date_br(value_to_string($row['date'] ?? ($row['date_creation'] ?? ''))),
+            'atualizadoEm' => format_date_br(value_to_string($row['date_mod'] ?? '')),
+            'status' => ticket_task_status(value_to_string($row['state'] ?? ($row['status'] ?? ''))),
+        ];
+    }
+
+    return $tasks;
+}
+
+function ticket_task_content(array $task): string
+{
+    $raw = value_to_string($task['content'] ?? ($task['name'] ?? ''));
+    $decoded = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = trim(html_entity_decode(strip_tags($decoded), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    return preg_replace('/\s+/', ' ', $text) ?? $text;
+}
+
+function ticket_task_user(array $task): string
+{
+    foreach (['users_id', 'users_id_tech', 'users_id_editor'] as $field) {
+        $value = value_to_string($task[$field] ?? '');
+        if ($value !== '' && $value !== '0') {
+            return $value;
+        }
+    }
+
+    return 'Sem responsavel';
+}
+
+function ticket_task_status(string $state): string
+{
+    switch ($state) {
+        case '1':
+            return 'A fazer';
+        case '2':
+            return 'Feita';
+        case '3':
+            return 'Informacao';
+        default:
+            return $state !== '' ? $state : 'Sem status';
+    }
+}
+
 function build_project_ticket_query(array $config, int $start, int $pageSize): array
 {
     $projectField = $config['glpi']['project_field'];

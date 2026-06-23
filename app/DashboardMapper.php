@@ -20,6 +20,7 @@ function map_ticket_to_project(array $ticket, array $config): array
 
     return [
         'departamento' => value_to_string($ticket['80'] ?? '') ?: 'Sem entidade',
+        'chamadoId' => $ticketId,
         'projeto' => $title ?: $config['glpi']['project_tag_label'],
         'responsavel' => implode(', ', $assignees),
         'responsaveis' => $assignees,
@@ -34,6 +35,32 @@ function map_ticket_to_project(array $ticket, array $config): array
         'prioridadeOrdem' => $priority['order'],
         'observacao' => trim('#' . $ticketId . ' - Etiqueta: ' . ($projectTag ?: $config['glpi']['project_tag_label'])),
     ];
+}
+
+function map_ticket_tasks($tasks, array $config): array
+{
+    if (!is_array($tasks)) {
+        return [];
+    }
+
+    return array_values(array_map(
+        static function (array $task) use ($config): array {
+            $author = value_to_string($task['autor'] ?? '');
+            if (ctype_digit($author) && isset($config['users'][$author])) {
+                $author = $config['users'][$author];
+            }
+
+            return [
+                'id' => value_to_string($task['id'] ?? ''),
+                'conteudo' => value_to_string($task['conteudo'] ?? ''),
+                'autor' => $author ?: 'Sem responsavel',
+                'criadoEm' => value_to_string($task['criadoEm'] ?? ''),
+                'atualizadoEm' => value_to_string($task['atualizadoEm'] ?? ''),
+                'status' => value_to_string($task['status'] ?? ''),
+            ];
+        },
+        array_filter($tasks, 'is_array')
+    ));
 }
 
 function ticket_priority_from_category(string $category): array

@@ -768,7 +768,7 @@ if ($projectsJson === false) {
               <th>Responsável</th>
               <th>Status</th>
               <th>Prazo</th>
-              <th>Abertura / solucao</th>
+              <th>Abertura / solução</th>
               <th>Chamado</th>
               <th>Tarefas</th>
             </tr>

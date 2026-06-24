@@ -889,7 +889,7 @@ if ($projectsJson === false) {
         return '<div class="empty-state" style="padding:14px;">Nenhuma tarefa encontrada neste chamado.</div>';
       }
 
-      return `<div class="task-list">${tasks.map(task => `<div class="task-item ${taskStatusClass(task)}"><span class="task-icon">${taskStatusIcon(task)}</span><div><div class="task-title">${escapeHtml(task.conteudo)}</div><div class="task-meta"><span>${escapeHtml(task.autor)}</span><span class="task-status">${escapeHtml(task.status)}</span><span>Criada em ${escapeHtml(task.criadoEm || 'A definir')}</span></div></div></div>`).join('')}</div>`;
+      return `<div class="task-list">${tasks.map(task => `<div class="task-item ${taskStatusClass(task)}"><span class="task-icon">${taskStatusIcon(task)}</span><div><div class="task-title">${escapeHtml(task.conteudo)}</div><div class="task-meta"><span>${escapeHtml(task.autor)}</span><span class="task-status">${escapeHtml(task.status)}</span><span>Prazo: ${escapeHtml(task.criadoEm || 'A definir')}</span></div></div></div>`).join('')}</div>`;
     }
 
     function renderTaskToggle(project, extraClass = '') {

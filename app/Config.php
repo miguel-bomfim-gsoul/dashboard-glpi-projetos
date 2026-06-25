@@ -38,7 +38,8 @@ function load_config(string $envFile): array
             '405' => 'Daniel Floriano',
             '804' => 'Kauan Souza',
             '839' => 'Suyane Ferreira',
-            '889' => 'Gabriel Jardim'
+            '889' => 'Gabriel Jardim',
+            '846' => 'Thalles Tavares'
         ],
     ];
 }

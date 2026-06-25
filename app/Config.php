@@ -24,23 +24,9 @@ function load_config(string $envFile): array
             'solved_date_field' => env_value('GLPI_SOLVED_DATE_FIELD', '17'),
             'closed_date_field' => env_value('GLPI_CLOSED_DATE_FIELD', '16'),
             'completed_since' => env_value('GLPI_COMPLETED_SINCE', '2026-06-22'),
+            'users_group_id' => env_value('GLPI_USERS_GROUP_ID', '27'),
         ],
-        'users' => [
-            '217' => 'Giovani Moras',
-            '343' => 'Alexandre de Sá',
-            '636' => 'Gabriel Wolker',
-            '297' => 'Lucas Silveira',
-            '374' => 'Augusto Gonçalves',
-            '344' => 'Tiago Torquato',
-            '587' => 'Matheus Monteiro',
-            '656' => 'Miguel Bomfim',
-            '382' => 'Patrick Schlemper',
-            '405' => 'Daniel Floriano',
-            '804' => 'Kauan Souza',
-            '839' => 'Suyane Ferreira',
-            '889' => 'Gabriel Jardim',
-            '846' => 'Thalles Tavares'
-        ],
+        'users' => [],
     ];
 }
 

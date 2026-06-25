@@ -48,6 +48,8 @@ function map_ticket_tasks($tasks, array $config): array
             $author = value_to_string($task['autor'] ?? '');
             if (ctype_digit($author) && isset($config['users'][$author])) {
                 $author = $config['users'][$author];
+            } elseif (ctype_digit($author)) {
+                $author = 'Usuario #' . $author;
             }
 
             return [
@@ -133,6 +135,8 @@ function resolve_ticket_users($value, array $userNames): array
         if (ctype_digit($part)) {
             if (isset($userNames[$part])) {
                 $names[] = $userNames[$part];
+            } else {
+                $names[] = 'Usuario #' . $part;
             }
             continue;
         }

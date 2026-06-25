@@ -15,6 +15,7 @@ if ($ticketId === '' || !ctype_digit($ticketId)) {
 
 try {
     $sessionToken = glpi_init_session($config);
+    $config = config_with_glpi_group_users($config, $sessionToken);
     $tasks = fetch_ticket_tasks($config, $sessionToken, $ticketId);
 
     echo json_encode([

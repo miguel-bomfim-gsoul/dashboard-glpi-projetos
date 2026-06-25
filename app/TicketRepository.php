@@ -22,7 +22,11 @@ function fetch_project_ticket_rows(array $config, string $sessionToken): array
         $rows = is_array($response['data'] ?? null) ? $response['data'] : [];
 
         foreach ($rows as $row) {
-            if (is_array($row) && value_to_string($row[$config['glpi']['project_field']] ?? null) !== '') {
+            if (
+                is_array($row)
+                && value_to_string($row[$config['glpi']['project_field']] ?? null) !== ''
+                && should_include_project_ticket($row, $config)
+            ) {
                 $tickets[] = $row;
             }
         }
@@ -31,6 +35,45 @@ function fetch_project_ticket_rows(array $config, string $sessionToken): array
     } while ($start < $totalCount && count($rows) > 0);
 
     return enrich_ticket_categories($tickets, $config, $sessionToken);
+}
+
+function should_include_project_ticket(array $ticket, array $config): bool
+{
+    $statusId = value_to_string($ticket['12'] ?? '');
+    if ($statusId !== '5' && $statusId !== '6') {
+        return true;
+    }
+
+    $cutoff = ticket_date_timestamp((string) $config['glpi']['completed_since']);
+    if ($cutoff === null) {
+        return true;
+    }
+
+    $solvedAt = ticket_date_timestamp(value_to_string($ticket[$config['glpi']['solved_date_field']] ?? ''));
+    $closedAt = ticket_date_timestamp(value_to_string($ticket[$config['glpi']['closed_date_field']] ?? ''));
+
+    return ($solvedAt !== null && $solvedAt >= $cutoff)
+        || ($closedAt !== null && $closedAt >= $cutoff);
+}
+
+function ticket_date_timestamp(string $value)
+{
+    if ($value === '') {
+        return null;
+    }
+
+    foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d', 'd-m-Y H:i:s', 'd-m-Y H:i', 'd-m-Y', 'd/m/Y H:i:s', 'd/m/Y H:i', 'd/m/Y'] as $format) {
+        $date = DateTimeImmutable::createFromFormat($format, $value);
+        if ($date instanceof DateTimeImmutable) {
+            return $date->getTimestamp();
+        }
+    }
+
+    try {
+        return (new DateTimeImmutable($value))->getTimestamp();
+    } catch (Throwable $error) {
+        return null;
+    }
 }
 
 function enrich_ticket_categories(array $tickets, array $config, string $sessionToken): array
@@ -167,12 +210,6 @@ function build_project_ticket_query(array $config, int $start, int $pageSize): a
                 'searchtype' => 'equals',
                 'value' => $config['glpi']['project_tag'],
             ],
-            [
-                'link' => 'AND',
-                'field' => 12,
-                'searchtype' => 'equals',
-                'value' => 'notold',
-            ],
         ],
         'range' => $start . '-' . ($start + $pageSize - 1),
         'expand_dropdowns' => true,
@@ -190,6 +227,8 @@ function build_project_ticket_query(array $config, int $start, int $pageSize): a
         12,
         $config['glpi']['open_date_field'],
         $config['glpi']['solution_time_field'],
+        $config['glpi']['solved_date_field'],
+        $config['glpi']['closed_date_field'],
         19,
         80,
         $config['glpi']['location_field'],

@@ -21,6 +21,9 @@ function load_config(string $envFile): array
             'location_field' => env_value('GLPI_LOCATION_FIELD', '83'),
             'open_date_field' => env_value('GLPI_OPEN_DATE_FIELD', '15'),
             'solution_time_field' => env_value('GLPI_SOLUTION_TIME_FIELD', '18'),
+            'solved_date_field' => env_value('GLPI_SOLVED_DATE_FIELD', '17'),
+            'closed_date_field' => env_value('GLPI_CLOSED_DATE_FIELD', '16'),
+            'completed_since' => env_value('GLPI_COMPLETED_SINCE', '2026-06-22'),
         ],
         'users' => [
             '217' => 'Giovani Moras',
@@ -35,6 +38,7 @@ function load_config(string $envFile): array
             '405' => 'Daniel Floriano',
             '804' => 'Kauan Souza',
             '839' => 'Suyane Ferreira',
+            '889' => 'Gabriel Jardim'
         ],
     ];
 }

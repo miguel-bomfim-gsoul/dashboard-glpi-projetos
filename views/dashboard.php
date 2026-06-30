@@ -334,6 +334,11 @@ if ($projectsJson === false) {
       box-shadow: inset 0 0 0 1px var(--priority-none), var(--shadow-sm)
     }
 
+    .project-card.overdue {
+      border-color: var(--status-atraso-dot);
+      box-shadow: inset 0 0 0 1px var(--status-atraso-dot), var(--shadow-sm)
+    }
+
     .dept {
       font-size: 11px;
       text-transform: uppercase;
@@ -1041,7 +1046,8 @@ if ($projectsJson === false) {
         return;
       }
       cardsGrid.innerHTML = lista.map(p => {
-        return `<div class="project-card ${escapeHtml(p.prioridadeClasse)}"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}${escapeHtml(p.periodo_sla)}</div><div><div class="progress-label"><span>Prazo de entrega</span><span>${escapeHtml(progressLabel(p))}</span></div><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div><span class="priority-chip ${escapeHtml(p.prioridadeClasse)}">${escapeHtml(p.prioridade)}</span></div>`;
+        const overdueClass = p.prazoVencido ? 'overdue' : '';
+        return `<div class="project-card ${escapeHtml(p.prioridadeClasse)} ${overdueClass}"><div class="dept">${escapeHtml(p.departamento)}</div><div class="card-row"><div class="pname">${escapeHtml(p.projeto)}</div><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></div><div class="meta-line">${ICONS.user}${escapeHtml(p.responsavel)}</div><div class="meta-line">${ICONS.calendar}${escapeHtml(p.periodo_sla)}</div><div><div class="progress-label"><span>Prazo de entrega</span><span>${escapeHtml(progressLabel(p))}</span></div><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div></div><div class="note">${escapeHtml(p.observacao)}</div><span class="priority-chip ${escapeHtml(p.prioridadeClasse)}">${escapeHtml(p.prioridade)}</span></div>`;
       }).join('');
     }
 

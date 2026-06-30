@@ -29,6 +29,7 @@ function map_ticket_to_project(array $ticket, array $config): array
         'status' => dashboard_status($statusId),
         'progresso' => $progress,
         'progressoLabel' => dashboard_progress_label($progress, $openedAt, $solutionTime),
+        'prazoVencido' => dashboard_overdue($statusId, $solutionTime),
         'prioridade' => $priority['label'],
         'prioridadeFiltro' => $priority['filter'],
         'prioridadeClasse' => $priority['class'],
@@ -185,6 +186,20 @@ function dashboard_progress(string $statusId, string $openedAt, string $solution
     }
 
     return max(0.0, min(100.0, round(($elapsed / $total) * 100, 2)));
+}
+
+function dashboard_overdue(string $statusId, string $solutionTime): bool
+{
+    if ($statusId !== '1' && $statusId !== '2' && $statusId !== '3') {
+        return false;
+    }
+
+    $solutionTimeTimestamp = glpi_date_timestamp($solutionTime);
+    if ($solutionTimeTimestamp === null) {
+        return false;
+    }
+
+    return time() > $solutionTimeTimestamp;
 }
 
 function dashboard_progress_label(float $progress, string $openedAt, string $solutionTime): string

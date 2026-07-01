@@ -972,8 +972,11 @@ if ($projectsJson === false) {
           String(project.responsavel).toLowerCase().includes(active.busca) ||
           String(project.observacao).toLowerCase().includes(active.busca);
 
+        const okStatus = active.status === 'todos' ||
+          (active.status === 'Atrasado' ? project.prazoVencido : project.status === active.status);
+
         return (active.departamento === 'todos' || project.departamento === active.departamento) &&
-          (active.status === 'todos' || project.status === active.status) &&
+          okStatus &&
           (active.responsavel === 'todos' || nomes.includes(active.responsavel)) &&
           (active.prioridade === 'todos' || project.prioridadeFiltro === active.prioridade) &&
           okBusca;
@@ -986,18 +989,18 @@ if ($projectsJson === false) {
       const counts = {
         "Em execução": 0,
         "Pendente": 0,
-        "Em espera": 0,
         "Concluído": 0,
         "Atrasado": 0
       };
       lista.forEach(p => {
         if (counts[p.status] !== undefined) counts[p.status]++;
+        if (p.prazoVencido) counts["Atrasado"]++;
       });
       const cards = [
         ["Total de projetos", lista.length, "var(--petrol-700)", null, "todos"],
         ["Em execução", counts["Em execução"], "var(--status-exec-dot)", "var(--status-exec-dot)", "Em execução"],
         ["Pendentes", counts["Pendente"], "var(--status-pend-dot)", "var(--status-pend-dot)", "Pendente"],
-        ["Em espera", counts["Em espera"], "var(--status-espera-dot)", "var(--status-espera-dot)", "Em espera"],
+        ["Atrasados", counts["Atrasado"], "var(--status-atraso-dot)", "var(--status-atraso-dot)", "Atrasado"],
         ["Concluídos", counts["Concluído"], "var(--status-concl-dot)", "var(--status-concl-dot)", "Concluído"]
       ];
       summaryGrid.innerHTML = cards.map(([label, value, accent, dot, status]) => {
@@ -1021,7 +1024,7 @@ if ($projectsJson === false) {
       }).map(p => p.departamento))].sort();
       const statusList = [...new Set(filteredProjects({
         status: 'todos'
-      }).map(p => p.status))].sort();
+      }).flatMap(p => p.prazoVencido ? [p.status, 'Atrasado'] : [p.status]))].sort();
       const responsaveis = [...new Set(filteredProjects({
         responsavel: 'todos'
       }).flatMap(responsibleNames).filter(Boolean))].sort();
@@ -1034,7 +1037,7 @@ if ($projectsJson === false) {
       if (filtros.responsavel !== 'todos' && !responsaveis.includes(filtros.responsavel)) filtros.responsavel = 'todos';
       if (filtros.prioridade !== 'todos' && !prioridades.includes(filtros.prioridade)) filtros.prioridade = 'todos';
 
-      renderSelect(filtroDepto, departamentos, filtros.departamento, 'Todas as departamentos');
+      renderSelect(filtroDepto, departamentos, filtros.departamento, 'Todas as localizações');
       renderSelect(filtroStatus, statusList, filtros.status, 'Todos os status');
       renderSelect(filtroResponsavel, responsaveis, filtros.responsavel, 'Todos os responsaveis');
       renderSelect(filtroPrioridade, prioridades, filtros.prioridade, 'Todas as prioridades');
@@ -1137,3 +1140,4 @@ if ($projectsJson === false) {
 </body>
 
 </html>
+

@@ -1062,7 +1062,7 @@ if ($projectsJson === false) {
       tableBody.innerHTML = lista.map(p => {
         const key = projectKey(p);
         const open = expandedTableTasks.has(key);
-        const row = `<tr><td><span class="priority-dot ${escapeHtml(p.prioridadeClasse)}"></span>${escapeHtml(p.projeto)}</td><td><strong>${escapeHtml(p.departamento)}</strong></td><td>${escapeHtml(p.responsavel)}</td><td><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></td><td><div class="table-progress"><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div><span>${escapeHtml(progressLabel(p))}</span></div></td><td>${escapeHtml(p.periodo_sla)}</td><td>${escapeHtml(p.observacao)}</td><td>${renderTaskToggle(p, 'table-task-toggle')}</td></tr>`;
+        const row = `<tr><td><span class="priority-dot ${escapeHtml(p.prioridadeClasse)}"></span><strong>${escapeHtml(p.projeto)}</strong></td><td>${escapeHtml(p.departamento)}</td><td>${escapeHtml(p.responsavel)}</td><td><span class="badge ${badgeClass(p.status)}"><span class="dot"></span>${escapeHtml(p.status)}</span></td><td><div class="table-progress"><div class="progress-track"><div class="progress-fill" style="width:${progressWidth(p)}%;background:${barColor(p.status)}"></div></div><span>${escapeHtml(progressLabel(p))}</span></div></td><td>${escapeHtml(p.periodo_sla)}</td><td>${escapeHtml(p.observacao)}</td><td>${renderTaskToggle(p, 'table-task-toggle')}</td></tr>`;
         const tasks = open ? `<tr class="task-row"><td colspan="8"><div class="task-panel">${renderTaskItems(p)}</div></td></tr>` : '';
         return row + tasks;
       }).join('');
